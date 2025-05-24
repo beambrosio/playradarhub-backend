@@ -46,7 +46,7 @@ async def get_games():
     one_week_later = now + 7 * 24 * 60 * 60
 
     query = f"""
-    fields name, cover.url, first_release_date, platforms.name;
+    fields name, cover.url, first_release_date, platforms.name, summary;
     where first_release_date >= {now} & first_release_date < {one_week_later};
     sort first_release_date asc;
     limit 20;
