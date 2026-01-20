@@ -20,6 +20,9 @@ def _twitch_credentials():
     CLIENT_ID = os.environ.get("TWITCH_CLIENT_ID")
     CLIENT_SECRET = os.environ.get("TWITCH_CLIENT_SECRET")
 
+    print(os.environ)
+    print(f"CLIENT_ID:{CLIENT_ID} | CLIENT_SECRET:{CLIENT_SECRET}")
+
     return CLIENT_ID, CLIENT_SECRET
 
 
