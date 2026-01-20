@@ -1,0 +1,35 @@
+options:
+  logging: CLOUD_LOGGING_ONLY
+
+steps:
+  # Build da imagem Docker
+  - name: gcr.io/cloud-builders/docker
+    args:
+      - build
+      - "-t"
+      - gcr.io/playradarhub/playradarhub-backend:latest
+      - "."
+
+  # Push da imagem
+  - name: gcr.io/cloud-builders/docker
+    args:
+      - push
+      - gcr.io/playradarhub/playradarhub-backend:latest
+
+  # Deploy no Cloud Run
+  - name: gcr.io/google.com/cloudsdktool/cloud-sdk
+    entrypoint: gcloud
+    args:
+      - run
+      - deploy
+      - playradar-backend
+      - "--image"
+      - gcr.io/playradarhub/playradarhub-backend:latest
+      - "--region"
+      - us-central1
+      - "--platform"
+      - managed
+      - "--allow-unauthenticated"
+
+images:
+  - gcr.io/playradarhub/playradarhub-backend:latest
