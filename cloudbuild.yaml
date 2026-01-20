@@ -2,7 +2,7 @@ steps:
   - name: 'gcr.io/k8s-skaffold/pack'
     args:
       - 'build'
-      - 'gcr.io/$PROJECT_ID/playradarhub-backend'
+      - 'us-central1-docker.pkg.dev/$PROJECT_ID/playradarhub-backend/playradarhub-backend'
       - '--builder=gcr.io/buildpacks/builder'
       - '--publish'
 
@@ -12,7 +12,7 @@ steps:
       - 'deploy'
       - 'playradarhub-backend'
       - '--image'
-      - 'gcr.io/$PROJECT_ID/playradarhub-backend'
+      - 'us-central1-docker.pkg.dev/$PROJECT_ID/playradarhub-backend/playradarhub-backend'
       - '--region'
       - 'us-central1'
       - '--port'
