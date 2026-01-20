@@ -4,6 +4,7 @@ import httpx
 import time
 import os
 
+
 app = FastAPI()
 
 app.add_middleware(
@@ -14,11 +15,20 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-CLIENT_ID = os.getenv("TWITCH_CLIENT_ID")
-CLIENT_SECRET = os.getenv("TWITCH_CLIENT_SECRET")
+def _twitch_credentials():
+
+    CLIENT_ID = os.environ.get("TWITCH_CLIENT_ID")
+    CLIENT_SECRET = os.environ.get("TWITCH_CLIENT_SECRET")
+
+    return CLIENT_ID, CLIENT_SECRET
+
+
+CLIENT_ID, CLIENT_SECRET = _twitch_credentials()
+
 
 access_token = None
 token_expire_time = 0
+
 
 async def get_access_token():
     global access_token, token_expire_time
@@ -65,3 +75,9 @@ async def get_games():
             raise HTTPException(status_code=resp.status_code, detail="Erro ao consultar IGDB")
         games = resp.json()
         return games
+
+
+if __name__ == "__main__":
+    import uvicorn
+    # Run without auto-reload so the debugger attaches to the same process
+    uvicorn.run("main:app", host="127.0.0.1", port=8000, reload=False, log_level="info")
