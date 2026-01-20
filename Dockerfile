@@ -7,9 +7,6 @@ RUN pip install --no-cache-dir -r requirements.txt
 
 COPY . .
 
-ENV TWITCH_CLIENT_ID=${TWITCH_CLIENT_ID}
-ENV TWITCH_CLIENT_SECRET=${TWITCH_CLIENT_SECRET}
-
 
 EXPOSE 8080
 
