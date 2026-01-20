@@ -2,19 +2,20 @@ from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 import httpx
 import time
+import os
 
 app = FastAPI()
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # ajuste para seu domínio
+    allow_origins=["*"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
-CLIENT_ID = "en60gxyjnnsybyuon386sqtnvd2an7"
-CLIENT_SECRET = "n919cu79bcdunzl29muhijln2snvxb"
+CLIENT_ID = os.getenv("TWITCH_CLIENT_ID")
+CLIENT_SECRET = os.getenv("TWITCH_CLIENT_SECRET")
 
 access_token = None
 token_expire_time = 0
