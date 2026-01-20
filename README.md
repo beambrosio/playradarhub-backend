@@ -18,3 +18,7 @@ docker build \
   --build-arg CLIENT_ID="$CLIENT_ID" \
   --build-arg CLIENT_SECRET="$CLIENT_SECRET" \
   -t playradarhub-backend .
+
+```
+
+Created & Developed by: Beatriz Ambrosio
