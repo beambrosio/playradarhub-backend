@@ -7,14 +7,14 @@ steps:
     args:
       - build
       - "-t"
-      - gcr.io/playradarhub/playradarhub-backend:latest
+      - gcr.io/playradarhub-backend/playradarhub-backend:latest
       - "."
 
   # Push da imagem
   - name: gcr.io/cloud-builders/docker
     args:
       - push
-      - gcr.io/playradarhub/playradarhub-backend:latest
+      - gcr.io/playradarhub-backend/playradarhub-backend:latest
 
   # Deploy no Cloud Run
   - name: gcr.io/google.com/cloudsdktool/cloud-sdk
@@ -22,9 +22,9 @@ steps:
     args:
       - run
       - deploy
-      - playradar-backend
+      - playradarhub-backend
       - "--image"
-      - gcr.io/playradarhub/playradarhub-backend:latest
+      - gcr.io/playradarhub-backend/playradarhub-backend:latest
       - "--region"
       - us-central1
       - "--platform"
@@ -32,4 +32,4 @@ steps:
       - "--allow-unauthenticated"
 
 images:
-  - gcr.io/playradarhub/playradarhub-backend:latest
+  - gcr.io/playradarhub-backend/playradarhub-backend:latest
