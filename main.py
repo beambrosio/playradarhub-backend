@@ -55,7 +55,8 @@ async def get_games():
     query = f""" fields name, cover.url, first_release_date, platforms.name, summary, age_ratings.rating, age_ratings.category, genres.name 
     ,age_ratings.category, multiplayer_modes, language_supports ; 
     where first_release_date >= {now} & first_release_date < {one_week_later};
-    sort first_release_date asc;
+    sort first_release_date asc
+    limit 100;
     """
 
     headers = {
