@@ -80,10 +80,10 @@ async def get_best_rated_games():
 
     query = f"""
     fields name, cover.url, first_release_date, platforms.name, summary, 
-           total_rating, total_rating_count, genres.name;
+           rating,rating_count, genres.name;
     where first_release_date >= {now} & first_release_date < {one_week_later}
-          & total_rating != null;
-    sort total_rating desc;
+          & rating != null;
+    sort rating desc;
     limit 10;
     """
 
