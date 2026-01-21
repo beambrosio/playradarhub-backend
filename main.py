@@ -1,6 +1,8 @@
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from contextlib import asynccontextmanager
+from pydantic import BaseModel
+from typing import Optional
 import httpx
 import time
 import os
@@ -19,7 +21,14 @@ async def lifespan(app: FastAPI):
     yield
     await http_client.aclose()
 
-app = FastAPI(lifespan=lifespan)
+app = FastAPI(
+    lifespan=lifespan,
+    title="PlayRadar Hub API",
+    description="API for fetching game information from IGDB",
+    version="1.0.0",
+    docs_url="/docs",
+    redoc_url="/redoc"
+)
 
 app.add_middleware(
     CORSMiddleware,
@@ -28,6 +37,17 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+
+class GameResponse(BaseModel):
+    id: int
+    name: str
+    cover: Optional[dict] = None
+    first_release_date: Optional[int] = None
+    platforms: Optional[list] = None
+    summary: Optional[str] = None
+    genres: Optional[list] = None
+
 
 async def get_access_token():
     global access_token, token_expire_time
@@ -46,8 +66,13 @@ async def get_access_token():
     token_expire_time = time.time() + data.get("expires_in", 0) - 60
     return access_token
 
-@app.get("/api/next_week_release")
+@app.get("/api/next_week_release", respose_model=list[dict], tags=["Games"])
 async def get_games():
+    """
+     Get games releasing in the next 7 days.
+
+    Returns up to 100 games sorted by release date.
+    """
     token = await get_access_token()
     now = int(time.time())
     one_week_later = now + 7 * 24 * 60 * 60
@@ -72,20 +97,24 @@ async def get_games():
         raise HTTPException(status_code=resp.status_code, detail="Erro ao consultar IGDB")
     return resp.json()
 
-@app.get("/api/best_rating_week_release")
+@app.get("/api/popular_game_week", response_model=list[dict], tags=["Games"])
 async def get_best_rated_games():
+    """
+        Get the most popular games released in the past week.
+        Returns up to 10 games sorted by hypes (pre-release interest).
+    """
+
     token = await get_access_token()
     now = int(time.time())
-    one_week_later = now + 7 * 24 * 60 * 60
+    one_week_ago = now - 7 * 24 * 60 * 60
 
     query = f"""
-    fields name, cover.url, first_release_date, platforms.name, summary, 
-           rating,rating_count, genres.name;
-    where first_release_date >= {now} & first_release_date < {one_week_later}
-          & rating != null;
-    sort rating desc;
-    limit 10;
-    """
+       fields name, cover.url, first_release_date, platforms.name, summary,
+              rating, rating_count, genres.name, hypes, follows;
+       where first_release_date >= {one_week_ago} & first_release_date <= {now};
+       sort hypes desc;
+       limit 10;
+       """
 
     headers = {
         "Client-ID": CLIENT_ID,
