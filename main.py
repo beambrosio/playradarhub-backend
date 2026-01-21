@@ -97,23 +97,25 @@ async def get_games():
         raise HTTPException(status_code=resp.status_code, detail="Erro ao consultar IGDB")
     return resp.json()
 
-@app.get("/api/popular_game_week", response_model=list[dict], tags=["Games"])
-async def get_best_rated_games():
+@app.get("/api/all_games", response_model=list[dict], tags=["Games"])
+async def get_all_games(limit: int = 20, offset: int = 0, sort_by: str = "hypes desc"):
     """
-        Get the most popular games released in the past week.
-        Returns up to 10 games sorted by hypes (pre-release interest).
+        Get games with pagination.
+
+        Parameters:
+        - limit: Number of games to fetch per page (default: 10).
+        - offset: Number of games to skip (default: 0).
+        - sort_by: Sorting criteria (default: "hypes desc").
     """
 
     token = await get_access_token()
-    now = int(time.time())
-    one_week_ago = now - 7 * 24 * 60 * 60
 
     query = f"""
        fields name, cover.url, first_release_date, platforms.name, summary,
               rating, rating_count, genres.name, hypes, follows;
-       where first_release_date >= {one_week_ago} & first_release_date <= {now};
-       sort hypes desc;
-       limit 10;
+       sort {sort_by};
+       limit {limit};
+       offset {offset};
        """
 
     headers = {
