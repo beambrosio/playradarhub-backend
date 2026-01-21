@@ -52,9 +52,9 @@ async def get_games():
     now = int(time.time())
     one_week_later = now + 7 * 24 * 60 * 60
 
-    query = f""" fields name, cover.url, first_release_date, platforms.name, summary, age_ratings.rating,genres.name 
-    ,age_ratings.category, multiplayer_modes, language_supports ; where first_release_date >= {now} & 
-    first_release_date < {one_week_later};
+    query = f""" fields name, cover.url, first_release_date, platforms.name, summary, age_ratings.rating, age_ratings.category, genres.name 
+    ,age_ratings.category, multiplayer_modes, language_supports ; 
+    where first_release_date >= {now} & first_release_date < {one_week_later};
     sort first_release_date asc;
     """
 
