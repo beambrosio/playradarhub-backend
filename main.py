@@ -15,6 +15,7 @@ access_token = None
 token_expire_time = 0
 http_client: httpx.AsyncClient = None
 
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     global http_client
@@ -22,13 +23,9 @@ async def lifespan(app: FastAPI):
     yield
     await http_client.aclose()
 
+
 app = FastAPI(
     lifespan=lifespan,
-    title="PlayRadar Hub API",
-    description="API for fetching game information from IGDB",
-    version="1.0.0",
-    docs_url="/docs",
-    redoc_url="/redoc"
 )
 
 app.add_middleware(
@@ -38,16 +35,6 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
-
-
-class GameResponse(BaseModel):
-    id: int
-    name: str
-    cover: Optional[dict] = None
-    first_release_date: Optional[int] = None
-    platforms: Optional[list] = None
-    summary: Optional[str] = None
-    genres: Optional[list] = None
 
 
 async def get_access_token():
@@ -67,7 +54,8 @@ async def get_access_token():
     token_expire_time = time.time() + data.get("expires_in", 0) - 60
     return access_token
 
-@app.get("/api/next_week_release", respose_model=list[dict], tags=["Games"])
+
+@app.get("/api/next_week_release", response_model=list[dict], tags=["Games"])
 async def get_games():
     """
      Get games releasing in the next 7 days.
@@ -97,6 +85,7 @@ async def get_games():
     if resp.status_code != 200:
         raise HTTPException(status_code=resp.status_code, detail="Erro ao consultar IGDB")
     return resp.json()
+
 
 @app.get("/api/all_games", response_model=list[dict], tags=["Games"])
 async def get_all_games(limit: int = 20, offset: int = 0, sort_by: str = "hypes desc"):
@@ -129,6 +118,7 @@ async def get_all_games(limit: int = 20, offset: int = 0, sort_by: str = "hypes 
     if resp.status_code != 200:
         raise HTTPException(status_code=resp.status_code, detail="Erro ao consultar IGDB")
     return resp.json()
+
 
 if __name__ == "__main__":
     port = int(os.getenv("PORT", 8080))
