@@ -52,11 +52,39 @@ async def get_games():
     now = int(time.time())
     one_week_later = now + 7 * 24 * 60 * 60
 
-    query = f""" fields name, cover.url, first_release_date, platforms.name, summary, age_ratings.rating, age_ratings.category, genres.name 
-    ,age_ratings.category, multiplayer_modes, language_supports ; 
+    query = f"""
+    fields name, cover.url, first_release_date, platforms.name, summary, 
+           age_ratings.rating, age_ratings.category, genres.name, 
+           multiplayer_modes, language_supports;
     where first_release_date >= {now} & first_release_date < {one_week_later};
-    sort first_release_date asc
+    sort first_release_date asc;
     limit 100;
+    """
+
+    headers = {
+        "Client-ID": CLIENT_ID,
+        "Authorization": f"Bearer {token}",
+        "Content-Type": "text/plain",
+    }
+
+    resp = await http_client.post("https://api.igdb.com/v4/games", content=query, headers=headers)
+    if resp.status_code != 200:
+        raise HTTPException(status_code=resp.status_code, detail="Erro ao consultar IGDB")
+    return resp.json()
+
+@app.get("/api/best_rating_week_release")
+async def get_best_rated_games():
+    token = await get_access_token()
+    now = int(time.time())
+    one_week_later = now + 7 * 24 * 60 * 60
+
+    query = f"""
+    fields name, cover.url, first_release_date, platforms.name, summary, 
+           total_rating, total_rating_count, genres.name;
+    where first_release_date >= {now} & first_release_date < {one_week_later}
+          & total_rating != null;
+    sort total_rating desc;
+    limit 10;
     """
 
     headers = {
