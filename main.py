@@ -74,6 +74,7 @@ async def get_games():
     sort first_release_date asc;
     limit 100;
     """
+    print(query)
 
     headers = {
         "Client-ID": CLIENT_ID,
@@ -107,6 +108,8 @@ async def get_all_games(limit: int = 20, offset: int = 0, sort_by: str = "hypes 
        limit {limit};
        offset {offset};
        """
+
+    print(query)
 
     headers = {
         "Client-ID": CLIENT_ID,
