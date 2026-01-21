@@ -1,3 +1,4 @@
+import uvicorn
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from contextlib import asynccontextmanager
@@ -128,3 +129,7 @@ async def get_all_games(limit: int = 20, offset: int = 0, sort_by: str = "hypes 
     if resp.status_code != 200:
         raise HTTPException(status_code=resp.status_code, detail="Erro ao consultar IGDB")
     return resp.json()
+
+if __name__ == "__main__":
+    port = int(os.getenv("PORT", 8080))
+    uvicorn.run("app:app", host="0.0.0.0", port=port)
