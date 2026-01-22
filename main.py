@@ -138,11 +138,13 @@ async def get_apitube_gaming_news(per_page: int = 10):
         "x-api-key": api_key,
     }
     params = {
+        "topic.id": 128,
         "per_page": per_page,
     }
 
     async with httpx.AsyncClient() as client:
         response = await client.get(url, headers=headers, params=params)
+        print(response.json())
 
     if response.status_code != 200:
         raise HTTPException(status_code=response.status_code, detail="Failed to fetch news from APITube API")
