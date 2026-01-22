@@ -10,6 +10,7 @@ import os
 
 CLIENT_ID = os.environ.get("TWITCH_CLIENT_ID")
 CLIENT_SECRET = os.environ.get("TWITCH_CLIENT_SECRET")
+APITUBE_API_KEY = os.environ.get("APITUBE_API_KEY")
 
 access_token = None
 token_expire_time = 0
@@ -121,6 +122,31 @@ async def get_all_games(limit: int = 20, offset: int = 0, sort_by: str = "hypes 
     if resp.status_code != 200:
         raise HTTPException(status_code=resp.status_code, detail="Erro ao consultar IGDB")
     return resp.json()
+
+
+@app.get("/api/apitube_gaming_news", response_model=list[dict], tags=["News"])
+async def get_apitube_gaming_news():
+    """
+    Fetch gaming-related news using the APITube API.
+    """
+    api_key = os.environ.get("APITUBE_API_KEY")
+    if not api_key:
+        raise HTTPException(status_code=500, detail="APITube API key not configured")
+
+    url = "https://api.apitube.io/v1/news/everything"
+    params = {
+        "topic.id": "video_games_news",
+        "api_key": api_key,
+    }
+
+    async with httpx.AsyncClient() as client:
+        response = await client.get(url, params=params)
+
+    if response.status_code != 200:
+        raise HTTPException(status_code=response.status_code, detail="Failed to fetch news from APITube API")
+
+    data = response.json()
+    return data.get("articles", [])
 
 
 if __name__ == "__main__":
