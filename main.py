@@ -125,7 +125,7 @@ async def get_all_games(limit: int = 20, offset: int = 0, sort_by: str = "hypes 
 
 
 @app.get("/api/apitube_gaming_news", response_model=list[dict], tags=["News"])
-async def get_apitube_gaming_news():
+async def get_apitube_gaming_news(per_page: int = 10):
     """
     Fetch gaming-related news using the APITube API.
     """
@@ -134,19 +134,22 @@ async def get_apitube_gaming_news():
         raise HTTPException(status_code=500, detail="APITube API key not configured")
 
     url = "https://api.apitube.io/v1/news/everything"
+    headers = {
+        "x-api-key": api_key,
+    }
     params = {
-        "topic.id": "video_games_news",
-        "api_key": api_key,
+        "per_page": per_page,
     }
 
     async with httpx.AsyncClient() as client:
-        response = await client.get(url, params=params)
+        response = await client.get(url, headers=headers, params=params)
 
     if response.status_code != 200:
         raise HTTPException(status_code=response.status_code, detail="Failed to fetch news from APITube API")
 
     data = response.json()
     return data.get("articles", [])
+
 
 
 if __name__ == "__main__":
