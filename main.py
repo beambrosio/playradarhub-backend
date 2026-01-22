@@ -2,8 +2,6 @@ import uvicorn
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from contextlib import asynccontextmanager
-from pydantic import BaseModel
-from typing import Optional
 import httpx
 import time
 import os

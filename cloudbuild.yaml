@@ -19,6 +19,7 @@ steps:
       - '8080'
       - '--set-secrets=TWITCH_CLIENT_ID=projects/54816317792/secrets/TWITCH_CLIENT_ID/versions/latest'
       - '--set-secrets=TWITCH_CLIENT_SECRET=projects/54816317792/secrets/TWITCH_CLIENT_SECRET/versions/latest'
+      - '--set-secrets=APITUBE_API_KEY=projects/54816317792/secrets/APITUBE_API_KEY/versions/latest'
 
 options:
   logging: CLOUD_LOGGING_ONLY
