@@ -1,38 +1,8 @@
 import uvicorn
-from fastapi import FastAPI, HTTPException
-from fastapi.middleware.cors import CORSMiddleware
-from contextlib import asynccontextmanager
-import httpx
-import time
-import os
+from fastapi import FastAPI
+from app import create_app
 
-CLIENT_ID = os.environ.get("TWITCH_CLIENT_ID")
-CLIENT_SECRET = os.environ.get("TWITCH_CLIENT_SECRET")
-
-access_token = None
-token_expire_time = 0
-http_client: httpx.AsyncClient = None
-
-
-@asynccontextmanager
-async def lifespan(app: FastAPI):
-    global http_client
-    http_client = httpx.AsyncClient()
-    yield
-    await http_client.aclose()
-
-
-app = FastAPI(
-    lifespan=lifespan,
-)
-
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["*"],
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
+app = create_app()
 
 
 async def get_access_token():
@@ -40,16 +10,37 @@ async def get_access_token():
     if access_token and time.time() < token_expire_time:
         return access_token
 
-    url = (
-        f"https://id.twitch.tv/oauth2/token?client_id={CLIENT_ID}"
-        f"&client_secret={CLIENT_SECRET}&grant_type=client_credentials"
-    )
-    response = await http_client.post(url)
-    data = response.json()
+    client_id = os.environ.get("TWITCH_CLIENT_ID")
+    client_secret = os.environ.get("TWITCH_CLIENT_SECRET")
+    if not client_id or not client_secret:
+        logger.error("TWITCH_CLIENT_ID or TWITCH_CLIENT_SECRET not set in environment")
+        raise HTTPException(status_code=500, detail="Missing Twitch client credentials")
+
+    url = f"https://id.twitch.tv/oauth2/token?client_id={CLIENT_ID}&client_secret={CLIENT_SECRET}&grant_type=client_credentials"
+    payload = ""
+    headers = {}
+
+    try:
+        response = requests.request("POST", url, headers=headers, data=payload)
+        logger.info(f"response: {response}")
+    except Exception as e:
+        logger.exception("Error requesting token from Twitch: %s", e)
+        raise HTTPException(status_code=500, detail=f"Twitch token request failed: {e}")
+
+    try:
+        data = response.json()
+    except Exception:
+        text = response.text
+        logger.error("Non-JSON response from Twitch token endpoint: status=%s body=%s", response.status_code, text)
+        raise HTTPException(status_code=500, detail={"error": "Failed to obtain token", "response_text": text})
+
     if "access_token" not in data:
-        raise HTTPException(status_code=500, detail="Failed to obtain token")
+        logger.error("Failed to obtain token from Twitch: status=%s body=%s", response.status_code, data)
+        raise HTTPException(status_code=500, detail={"error": "Failed to obtain token", "response": data})
+
     access_token = data["access_token"]
     token_expire_time = time.time() + data.get("expires_in", 0) - 60
+    logger.info("Obtained new Twitch access token; expires_in=%s", data.get("expires_in"))
     return access_token
 
 
@@ -61,13 +52,59 @@ def build_headers(token: str) -> dict:
     }
 
 
+async def fetch_steam_details(appid: str) -> dict | None:
+    """
+    Fetch Steam store details for a given Steam app id using the public store API.
+    Returns the 'data' block from the Steam API response if available, otherwise None.
+    Adds an 'is_dlc' boolean when applicable.
+    """
+    try:
+        resp = await http_client.get(f"https://store.steampowered.com/api/appdetails?appids={appid}&l=en&cc=us")
+        if resp.status_code != 200:
+            return None
+        data = resp.json()
+        entry = data.get(str(appid))
+        if not entry or not entry.get("success"):
+            return None
+        info = entry.get("data") or {}
+        # Detect DLC: Steam includes a 'type' field and a 'dlc' array on base games
+        is_dlc = (info.get("type") == "dlc") or (isinstance(info.get("dlc"), list) and len(info.get("dlc")) == 0 and info.get("type") == "dlc")
+        # More reliable: if 'type' == 'dlc' then it's a DLC; otherwise if the app has a parent package or similar, classify accordingly
+        info["is_dlc"] = bool(info.get("type") == "dlc")
+        return info
+    except Exception:
+        return None
+
+
 async def fetch_games(query: str) -> list[dict]:
+    logging.info("fetch_games")
     token = await get_access_token()
+    # do not print tokens
     headers = build_headers(token)
     resp = await http_client.post("https://api.igdb.com/v4/games", content=query, headers=headers)
     if resp.status_code != 200:
         raise HTTPException(status_code=resp.status_code, detail="Error querying IGDB")
-    return resp.json()
+    games = resp.json()
+
+    # Enrich returned games with Steam data when a Steam store URL is present in IGDB 'websites'
+    steam_re = re.compile(r"store\\.steampowered\\.com\\/app\\/(\\d+)")
+    async def _attach_steam(game: dict):
+        websites = game.get("websites") or []
+        if isinstance(websites, list):
+            for w in websites:
+                url = w.get("url", "") if isinstance(w, dict) else ""
+                m = steam_re.search(url)
+                if m:
+                    appid = m.group(1)
+                    steam_data = await fetch_steam_details(appid)
+                    if steam_data:
+                        game["steam"] = steam_data
+                    return
+
+    tasks = [_attach_steam(game) for game in games]
+    if tasks:
+        await asyncio.gather(*tasks)
+    return games
 
 
 @app.get("/api/next_week_release", response_model=list[dict], tags=["Games"])
@@ -86,7 +123,7 @@ async def get_next_week_release(limit: int = 20, offset: int = 0):
 
     query = f"""
     fields name, cover.url, first_release_date, platforms.name, summary,
-           age_ratings.rating, age_ratings.category, genres.name,
+           age_ratings.rating, age_ratings.category, genres.name, websites.url,
            multiplayer_modes, language_supports;
     where first_release_date >= {now} & first_release_date < {one_week_later};
     sort first_release_date asc;
@@ -106,9 +143,10 @@ async def get_all_games(limit: int = 20, offset: int = 0, sort_by: str = "hypes 
     - offset: Number of games to skip (default: 0).
     - sort_by: Sorting criteria (default: "hypes desc").
     """
+    logger.info("get_all_games called: sort_by=%s limit=%s offset=%s", sort_by, limit, offset)
     query = f"""
     fields name, cover.url, first_release_date, platforms.name, summary,
-           rating, rating_count, genres.name, hypes, follows;
+           rating, rating_count, genres.name, websites.url, hypes, follows;
     sort {sort_by};
     limit {limit};
     offset {offset};
