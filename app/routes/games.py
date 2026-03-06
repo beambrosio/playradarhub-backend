@@ -2,6 +2,8 @@ from fastapi import APIRouter, Request
 from ..services.igdb import fetch_games as igdb_fetch_games
 from ..services.steam import fetch_steam_details
 from ..logging_config import logger
+from typing import List
+from ..models import Game
 import re
 import asyncio
 
@@ -10,7 +12,7 @@ router = APIRouter()
 steam_re = re.compile(r"store\.steampowered\.com\/app\/(\d+)")
 
 
-@router.get("/api/next_week_release", response_model=list[dict], tags=["Games"])
+@router.get("/api/next_week_release", response_model=List[Game], tags=["Games"])
 async def get_next_week_release(request: Request, limit: int = 20, offset: int = 0):
     now = int(__import__('time').time())
     one_week_later = now + 7 * 24 * 60 * 60
@@ -45,7 +47,7 @@ async def get_next_week_release(request: Request, limit: int = 20, offset: int =
     return games
 
 
-@router.get("/api/all_games", response_model=list[dict], tags=["Games"])
+@router.get("/api/all_games", response_model=List[Game], tags=["Games"])
 async def get_all_games(request: Request, limit: int = 20, offset: int = 0, sort_by: str = "hypes desc"):
     logger.info("get_all_games called: sort_by=%s limit=%s offset=%s", sort_by, limit, offset)
     query = f"""

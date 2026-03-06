@@ -51,6 +51,41 @@ async def get_access_token():
 
 
 async def fetch_games(query: str, http_client):
+    # During local testing, allow returning canned mock data instead of calling IGDB/Twitch.
+    if os.environ.get("PLAYRADAR_USE_MOCK_DATA", "").lower() in ("1", "true", "yes"):
+        logger.info("Returning mock IGDB data due to PLAYRADAR_USE_MOCK_DATA env var")
+        return [
+            {
+                "id": 123,
+                "name": "Mock Game",
+                "cover": {"url": "https://images.igdb.com/mock.jpg"},
+                "first_release_date": 1670000000,
+                "platforms": [{"name": "PC (Windows)"}],
+                "summary": "This is a mock game",
+                "rating": 85.0,
+                "rating_count": 10,
+                "genres": [{"name": "Action"}],
+                "hypes": 100,
+                "follows": 50,
+                "websites": [{"url": "https://store.steampowered.com/app/12345"}],
+                "steam": {
+                    "steam_appid": 12345,
+                    "name": "Mock Game",
+                    "type": "game",
+                    "is_free": False,
+                    "required_age": 0,
+                    "header_image": "https://cdn.akamai.steamstatic.com/steam/apps/12345/header.jpg",
+                    "short_description": "A mock game",
+                    "developers": ["Mock Dev"],
+                    "publishers": ["Mock Pub"],
+                    "genres": [{"id": 1, "description": "Action"}],
+                    "categories": [{"id": 1, "description": "Multi-player"}],
+                    "metacritic": {"score": 88},
+                    "is_dlc": False,
+                },
+            }
+        ]
+
     token = await get_access_token()
     headers = {
         "Client-ID": CLIENT_ID,
