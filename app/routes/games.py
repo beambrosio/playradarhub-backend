@@ -17,7 +17,7 @@ async def get_next_week_release(request: Request, limit: int = 20, offset: int =
     now = int(__import__('time').time())
     one_week_later = now + 7 * 24 * 60 * 60
     query = f"""
-    fields name, cover.url, first_release_date, platforms.name, summary,
+    fields id, name, cover.url, first_release_date, platforms.name, summary,
            age_ratings.rating, age_ratings.category, genres.name, websites.url,
            multiplayer_modes, language_supports;
     where first_release_date >= {now} & first_release_date < {one_week_later};
@@ -51,7 +51,7 @@ async def get_next_week_release(request: Request, limit: int = 20, offset: int =
 async def get_all_games(request: Request, limit: int = 20, offset: int = 0, sort_by: str = "hypes desc"):
     logger.info("get_all_games called: sort_by=%s limit=%s offset=%s", sort_by, limit, offset)
     query = f"""
-    fields name, cover.url, first_release_date, platforms.name, summary,
+    fields id, name, cover.url, first_release_date, platforms.name, summary,
            rating, rating_count, genres.name, websites.url, hypes, follows;
     sort {sort_by};
     limit {limit};

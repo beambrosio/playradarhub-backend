@@ -13,7 +13,7 @@ async def search_games(request: Request, q: str, limit: int = 1, offset: int = 0
     # IGDB search: search "name" field and return relevant fields
     query = f'''
     search "{q}";
-    fields name, cover.url, first_release_date, platforms.name, summary, rating, rating_count, genres.name, websites.url, hypes, follows;
+    fields id, name, cover.url, first_release_date, platforms.name, summary, rating, rating_count, genres.name, websites.url, hypes, follows;
     limit {limit};
     offset {offset};
     '''
